@@ -1,0 +1,117 @@
+@using Gridfly.QuickStart
+@using System.Collections.Generic
+@using System.IO
+@model ReportHelper
+<html>
+    <head>
+        <title>Example 2</title>
+        <style>
+            @Raw(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Resources", "styles.css")))
+        </style>
+    </head>
+    <body>
+        @foreach (var region in (IEnumerable<dynamic>)((IDictionary<string, object>)Model.GetData())["regions"])
+        {
+            <table gf-table-config="{'sheetName': '@region["name"]', 'freezeHeader': 'true'}">
+                @{
+                    ViewBag.Full = true;
+                    await IncludeAsync("_HeaderEx2.cshtml", Model);
+                }
+                @{ var bestMonthName = Model.GetSafeName("Best", "Month", (string)region["name"]); }
+                <tbody gf-formatting-rule="{'name': '@bestMonthName', 'direction': 'ROW', 'columnGroup': 'months', 'cssClasses': 'bestMonth', 'condition': 'MAX'}">
+                            @foreach (var territory in (IEnumerable<dynamic>)region["territories"])
+                            {
+                                <data-grouping gf-group="{'name': '@Model.GetSafeName((string)region["name"], (string)territory["name"])'}">
+                                    @foreach (var area in (IEnumerable<dynamic>)territory["areas"])
+                                    {
+                                        <data-grouping gf-group="{'name': '@Model.GetSafeName((string)region["name"], (string)territory["name"], (string)area["name"])'}">
+                                            @foreach (var store in (IEnumerable<dynamic>)area["stores"])
+                                            {
+                                                <tr>
+                                                    <td>@region["name"]</td>
+                                                    <td>@territory["name"]</td>
+                                                    <td>@area["name"]</td>
+                                                    <td>@store["name"]</td>
+                                                    @foreach (var period in Model.GetPeriods())
+                                                    {
+                                                        if (Model.IsMonth(period))
+                                                        {
+                                                            <td>@store["data"][period]</td>
+                                                        }
+                                                        else if (Model.IsQuarter(period))
+                                                        {
+                                                            <td class="rowTotal"
+                                                                data-gf-formula="{'formula': 'SUM(@@col(-3):@@col(-1))'}">
+                                                                0
+                                                            </td>
+                                                        }
+                                                        else
+                                                        {
+                                                            <td class="rowTotal"
+                                                                data-gf-formula="{'formula': 'SUM(@@cols(quarters))'}">
+                                                                0
+                                                            </td>
+                                                        }
+                                                    }
+                                                </tr>
+                                            }
+                                            @{
+                                                ViewBag.Region = region;
+                                                ViewBag.Territory = territory;
+                                                ViewBag.Area = area;
+                                                ViewBag.Level = 4;
+                                                await IncludeAsync("_SubtotalRowEx2.cshtml", Model);
+                                            }
+                                        </data-grouping>
+                                    }
+                                    @{
+                                        ViewBag.Region = region;
+                                        ViewBag.Territory = territory;
+                                        ViewBag.Area = null;
+                                        ViewBag.Level = 3;
+                                        await IncludeAsync("_SubtotalRowEx2.cshtml", Model);
+                                    }
+                                </data-grouping>
+                            }
+                            @{
+                                ViewBag.Region = region;
+                                ViewBag.Territory = null;
+                                ViewBag.Area = null;
+                                ViewBag.Level = 2;
+                                await IncludeAsync("_SubtotalRowEx2.cshtml", Model);
+                            }
+                        </tbody>
+                    </table>
+            }
+
+            <table gf-table-config="{'sheetName': 'Summary', 'freezeHeader': 'true'}"
+                   gf-formatting-rule="{'name': 'BestOverallMonthSummary', 'direction': 'RANGE', 'columnGroup': 'months', 'cssClasses': ['bestMonthOverallLevel1', 'bestMonthOverallLevel2'], 'condition': 'TOP_5'}">
+                @{
+                    ViewBag.Full = false;
+                    await IncludeAsync("_HeaderEx2.cshtml", Model);
+                }
+                <tbody>
+                    @foreach (var summaryRegion in (IEnumerable<dynamic>)((IDictionary<string, object>)Model.GetData())["regions"])
+                    {
+                        <data-grouping gf-summary-output="{'name': '@Model.GetSafeName((string)summaryRegion["name"], "Summary", "Data")'}"
+                                       gf-group="{'name': '@Model.GetSafeName((string)summaryRegion["name"], "Summary")'}">
+                            <tr class="level2Subtotal">
+                                <td>@summaryRegion["name"]</td>
+                                @foreach (var period in Model.GetPeriods())
+                                {
+                                    <td gf-subtotal="{}">0</td>
+                                }
+                            </tr>
+                        </data-grouping>
+                    }
+                    <tr class="level1Subtotal">
+                        <td>Overall</td>
+                        @foreach (var period in Model.GetPeriods())
+                        {
+                            <td gf-subtotal="{}">0</td>
+                        }
+                    </tr>
+                </tbody>
+            </table>
+    </body>
+</html>

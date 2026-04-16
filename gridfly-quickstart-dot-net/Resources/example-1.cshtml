@@ -1,0 +1,129 @@
+@using Gridfly.QuickStart
+@using System.Collections.Generic
+@using System.IO
+@model ReportHelper
+<html>
+    <head>
+        <title>Example 1</title>
+        <style>
+            @Raw(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Resources", "styles.css")))
+        </style>
+    </head>
+
+    <body>
+        <table gf-table-config="{'freezeHeader': 'true'}">
+            <colgroup>
+                <col span="4" style="width:140px;"/>
+                <col span="17" style="width:150px;"
+                     gf-currency-output-format="{'groupThousands': 'true', 'decimals': 2, 'symbol': '$', 'applyToPlainNumeric': true}"/>
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Region</th>
+                    <th>Territory</th>
+                    <th>Area</th>
+                    <th>Store</th>
+
+                    @foreach (var period in Model.GetPeriods())
+                    {
+                        if (Model.IsMonth(period))
+                        {
+                            <th style="text-align: right"
+                                gf-column-config="{'key': '@period', 'groups': ['summary', 'months', 'periods']}">@period</th>
+                        }
+                        else if (Model.IsQuarter(period))
+                        {
+                            <th style="text-align: right"
+                                gf-column-config="{'key': '@period', 'groups': ['summary', 'periods', 'quarters']}">@period</th>
+                        }
+                        else
+                        {
+                            <th style="text-align: right"
+                                gf-column-config="{'key': '@period', 'groups': ['summary', 'periods']}">@period</th>
+                        }
+                    }
+                </tr>
+            </thead>
+            <tbody gf-formatting-rule="{'name': 'BestMonth', 'direction': 'ROW', 'columnGroup': 'months', 'cssClasses': ['bestMonth'], 'condition': 'MAX'}">
+
+                @foreach (var region in (IEnumerable<dynamic>)((IDictionary<string, object>)Model.GetData())["regions"])
+                {
+                    <data-grouping gf-group="{'name': '@Model.GetSafeName(region["name"])'}">
+
+                        @foreach (var territory in (IEnumerable<dynamic>)region["territories"])
+                        {
+                            <data-grouping
+                                    gf-group="{'name': '@Model.GetSafeName(region["name"], territory["name"])'}">
+
+                                @foreach (var area in (IEnumerable<dynamic>)territory["areas"])
+                                {
+                                    <data-grouping gf-group="{'name': '@Model.GetSafeName(region["name"], territory["name"], area["name"])'}">
+
+                                        @foreach (var store in (IEnumerable<dynamic>)area["stores"])
+                                        {
+                                            <tr>
+                                                <td>@region["name"]</td>
+                                                <td>@territory["name"]</td>
+                                                <td>@area["name"]</td>
+                                                <td>@store["name"]</td>
+
+                                                @foreach (var period in Model.GetPeriods())
+                                                {
+                                                    if (Model.IsMonth(period))
+                                                    {
+                                                        <td>@store["data"][period]</td>
+                                                    }
+                                                    else if (Model.IsQuarter(period))
+                                                    {
+                                                        <td class="rowTotal"
+                                                            data-gf-formula="{'formula': 'SUM(@@col(-3):@@col(-1))'}">0
+                                                        </td>
+                                                    }
+                                                    else
+                                                    {
+                                                        <td class="rowTotal"
+                                                            data-gf-formula="{'formula': 'SUM(@@cols(quarters))'}">
+                                                            0
+                                                        </td>
+                                                    }
+                                                }
+                                            </tr>
+                                        }
+                                        @{
+                                            ViewBag.Region = region;
+                                            ViewBag.Territory = territory;
+                                            ViewBag.Area = area;
+                                            ViewBag.Level = 4;
+                                            await IncludeAsync("_SubtotalRowEx1.cshtml", Model);
+                                        }
+                                    </data-grouping>
+                                }
+                                @{
+                                    ViewBag.Region = region;
+                                    ViewBag.Territory = territory;
+                                    ViewBag.Area = null;
+                                    ViewBag.Level = 3;
+                                    await IncludeAsync("_SubtotalRowEx1.cshtml", Model);
+                                }
+                            </data-grouping>
+                        }
+                        @{
+                            ViewBag.Region = region;
+                            ViewBag.Territory = null;
+                            ViewBag.Area = null;
+                            ViewBag.Level = 2;
+                            await IncludeAsync("_SubtotalRowEx1.cshtml", Model);
+                        }
+                    </data-grouping>
+                }
+                @{
+                    ViewBag.Region = null;
+                    ViewBag.Territory = null;
+                    ViewBag.Area = null;
+                    ViewBag.Level = 1;
+                    await IncludeAsync("_SubtotalRowEx1.cshtml", Model);
+                }
+            </tbody>
+        </table>
+    </body>
+</html>

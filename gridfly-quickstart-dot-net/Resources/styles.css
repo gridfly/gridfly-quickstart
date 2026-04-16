@@ -1,0 +1,67 @@
+table {
+    border-collapse: collapse;
+    border: thin solid black;
+    font-family: "Cascadia Mono", serif;
+    font-size: 9px;
+}
+
+th {
+    font-weight: bold;
+    background-color: #FD8A6B;
+}
+
+th, td {
+    vertical-align: middle;
+    padding: 1px;
+}
+
+.level1Subtotal {
+    background-color: #6D597A;
+    color: antiquewhite;
+}
+
+.level2Subtotal {
+    background-color: #B56576;
+    color: antiquewhite;
+}
+
+.level3Subtotal {
+    background-color: #E56B6F
+}
+
+.level4Subtotal {
+    background-color: #EAAC8B
+}
+
+.level5Subtotal {
+    background-color: #FFDFD3
+}
+
+.rowTotal {
+    background-color: #F4EED6
+}
+
+.bestMonth {
+    background-color: #9AB87A
+}
+
+.worstMonth {
+    background-color: #FF6978
+}
+
+.bestMonthOverallLevel1 {
+    background-color: #FFC312
+}
+
+.bestMonthOverallLevel2 {
+    background-color: #FAD5C4;
+}
+
+.worstMonthOverallLevel1 {
+    background-color: #696969;
+    color: antiquewhite;
+}
+
+.worstMonthOverallLevel2 {
+    background-color: #C0C0C0;
+}

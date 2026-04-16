@@ -1,0 +1,135 @@
+<html>
+    <head>
+        <title>Example 1</title>
+        <style>
+            #include("styles.css")
+        </style>
+    </head>
+    <body>
+        #foreach($region in $report.data["regions"])
+            <table gf-table-config="{'sheetName': '$region.name', 'freezeHeader': true}">
+                #renderExample2Header(true)
+                <tbody gf-formatting-rule="{'name': '$report.getSafeName('Best', 'Month', $region[
+                    "name"])', 'direction': 'ROW', 'columnGroup': 'months', 'cssClasses': 'bestMonth', 'condition': 'MAX'}">
+                    #foreach($territory in $region["territories"])
+                        <data-grouping
+                                gf-group="{'name': '$report.getSafeName($region["name"],  $territory["name"])'}"
+                                gf-named-range="{'name': '$report.getSafeName($territory["name"])'}">
+
+                            #foreach($area in $territory["areas"])
+                                <data-grouping
+                                        gf-group="{'name': '$report.getSafeName($region["name"], $territory[
+                                            "name"], $area["name"])'}">
+
+                                    #foreach($store in $area["stores"])
+                                        <tr>
+                                            <td>$region["name"]</td>
+                                            <td>$territory["name"]</td>
+                                            <td>$area["name"]</td>
+                                            <td>$store["name"]</td>
+
+                                            #foreach($period in $report.periods)
+                                                #if($report.isMonth($period))
+                                                    <td>$store["data"][$period]</td>
+                                                #elseif($report.isQuarter($period))
+                                                    <td class="rowTotal"
+                                                        data-gf-formula="{'formula': 'SUM(@col(-3):@col(-1))'}">0
+                                                    </td>
+                                                #else
+                                                    <td class="rowTotal"
+                                                        data-gf-formula="{'formula': 'SUM(@cols(quarters))'}">
+                                                        0
+                                                    </td>
+                                                #end
+                                            #end
+                                        </tr>
+                                    #end
+                                    #renderExample2SubtotalsRow($region $territory $area "" 4)
+                                </data-grouping>
+                            #end
+                            #renderExample2SubtotalsRow($region $territory "" "" 3)
+                        </data-grouping>
+                    #end
+                    #renderExample2SubtotalsRow($region "" "" "" 2)
+                </tbody>
+            </table>
+        #end
+
+        <!-- SUMMARY SHEET -->
+        <table gf-table-config="{'sheetName': 'Summary', 'freezeHeader': true}"
+               gf-formatting-rule="{'name': 'BestOverallMonthSummary', 'direction': 'RANGE', 'columnGroup': 'months', 'cssClasses': ['bestMonthOverallLevel1', 'bestMonthOverallLevel2'], 'condition': 'TOP_5'}">
+            #renderExample2Header(false)
+            <tbody>
+                #foreach($region in $report.data["regions"])
+                    <data-grouping
+                            gf-summary-output="{'name': '$report.getSafeName($region["name"], 'Summary', 'Data')'}"
+                            gf-group="{'name': '$report.getSafeName($region["name"], 'Summary')'}">
+                        <tr class="level2Subtotal">
+                            <td>$region["name"]</td>
+                            #foreach($period in $report.periods)
+                                <td gf-subtotal="{}">0$</td>
+                            #end
+                        </tr>
+                    </data-grouping>
+                #end
+                <tr class="level1Subtotal">
+                    <td>Overall</td>
+                    #foreach($period in $report.periods)
+                        <td gf-subtotal="{}">0$</td>
+                    #end
+                </tr>
+            </tbody>
+        </table>
+    </body>
+</html>
+
+#macro(renderExample2SubtotalsRow $region $territory $area $store $level)
+<tr class="level${level}Subtotal"
+    #if($level==3)gf-add-to-summary="{'name': '$report.getSafeName($region["name"], 'Summary',
+        'Data')', 'columnGroup': 'summary'}"#end>
+    <td>#if($region)$region["name"]#end</td>
+    <td>#if($territory)$territory["name"]#end</td>
+    <td>#if($area)$area["name"]#end</td>
+    <td>#if($store)$store["name"]#end</td>
+    #foreach($period in $report.periods)
+        <td gf-subtotal="{'function': 'SUM'}">0</td>
+    #end
+</tr>
+#end
+
+#macro(renderExample2Header $full)
+<colgroup>
+    <col span="#if($full)4 #else 1 #end" style="width:140px;"/>
+    #foreach($period in $report.periods)
+        <col style="width:170px;"
+             gf-currency-output-format="{'groupThousands': 'true', 'decimals': 2, 'symbol': '$', 'applyToPlainNumeric': true}"
+            #if($foreach.count %4 == 0 || ! $foreach.hasNext) class="rowTotal" #end />
+    #end
+
+</colgroup>
+<thead>
+    <tr>
+        #if($full)
+            <th>Region</th>
+        #end
+        <th gf-column-config="{'groups': 'summary'}">Territory</th>
+        #if($full)
+            <th>Area</th>
+            <th>Store</th>
+        #end
+
+        #foreach($period in $report.periods)
+            #if($report.isMonth($period))
+                <th style="text-align: right"
+                    gf-column-config="{'key': '$period', 'groups': ['summary', 'months', 'periods']}">$period</th>
+            #elseif($report.isQuarter($period))
+                <th style="text-align: right"
+                    gf-column-config="{'key': '$period', 'groups': ['summary', 'periods', 'quarters']}">$period</th>
+            #else
+                <th style="text-align: right"
+                    gf-column-config="{'key': '$period', 'groups': ['summary', 'periods']}">$period</th>
+            #end
+        #end
+    </tr>
+</thead>
+#end

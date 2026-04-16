@@ -1,0 +1,20 @@
+@using Gridfly.QuickStart
+@using System.Collections.Generic
+@model ReportHelper
+@{
+    var region = (IDictionary<string, object>)ViewBag.Region;
+    var territory = (IDictionary<string, object>)ViewBag.Territory;
+    var area = (IDictionary<string, object>)ViewBag.Area;
+    var store = ((IDictionary<string, object>)ViewBag).ContainsKey("Store") ? (IDictionary<string, object>)ViewBag.Store : null;
+    var level = (int)ViewBag.Level;
+}
+<tr class="level@(level)Subtotal">
+    <td>@(region != null ? region["name"] : "")</td>
+    <td>@(territory != null ? territory["name"] : "")</td>
+    <td>@(area != null ? area["name"] : "")</td>
+    <td>@(store != null ? store["name"] : "")</td>
+    @foreach (var period in Model.GetPeriods())
+    {
+        <td gf-subtotal="{'function': 'SUM'}">0</td>
+    }
+</tr>

@@ -1,0 +1,100 @@
+<html>
+    <head>
+        <title>Example 1</title>
+        <style>
+            #include("styles.css")
+        </style>
+    </head>
+
+    <body>
+        <table gf-table-config="{'freezeHeader': 'true'}">
+            <colgroup>
+                <col span="4" style="width:140px;"/>
+                <col span="17" style="width:150px;"
+                     gf-currency-output-format="{'groupThousands': 'true', 'decimals': 2, 'symbol': '$', 'applyToPlainNumeric': true}"/>
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Region</th>
+                    <th>Territory</th>
+                    <th>Area</th>
+                    <th>Store</th>
+
+                    #set($quarter = 1)
+
+                    #foreach($period in $report.periods)
+                        #if($report.isMonth($period))
+                            <th style="text-align: right"
+                                gf-column-config="{'key': '$period', 'groups': ['summary', 'months', 'periods']}">$period</th>
+                        #elseif($report.isQuarter($period))
+                            <th style="text-align: right"
+                                gf-column-config="{'key': '$period', 'groups': ['summary', 'periods', 'quarters']}">$period</th>
+                        #else
+                            <th style="text-align: right"
+                                gf-column-config="{'key': '$period', 'groups': ['summary', 'periods']}">$period</th>
+                        #end
+                    #end
+                </tr>
+            </thead>
+            <tbody gf-formatting-rule="{'name': 'BestMonth', 'direction': 'ROW', 'columnGroup': 'months', 'cssClasses': ['bestMonth'], 'condition': 'MAX'}">
+
+                #foreach($region in $report.data["regions"])
+                    <data-grouping gf-group="{'name': '$report.getSafeName($region["name"])'}">
+
+                        #foreach($territory in $region["territories"])
+                            <data-grouping
+                                    gf-group="{'name': '$report.getSafeName($region["name"], $territory["name"])'}">
+
+                                #foreach($area in $territory["areas"])
+                                    <data-grouping gf-group="{'name': '$report.getSafeName($region["name"], $territory[
+                                        "name"], $area["name"])'}">
+
+                                        #foreach($store in $area["stores"])
+                                            <tr>
+                                                <td>$region["name"]</td>
+                                                <td>$territory["name"]</td>
+                                                <td>$area["name"]</td>
+                                                <td>$store["name"]</td>
+
+                                                #foreach($period in $report.periods)
+                                                    #if($report.isMonth($period))
+                                                        <td>$store["data"][$period]</td>
+                                                    #elseif($report.isQuarter($period))
+                                                        <td class="rowTotal"
+                                                            data-gf-formula="{'formula': 'SUM(@col(-3):@col(-1))'}">0
+                                                        </td>
+                                                    #else
+                                                        <td class="rowTotal"
+                                                            data-gf-formula="{'formula': 'SUM(@cols(quarters))'}">
+                                                            0
+                                                        </td>
+                                                    #end
+                                                #end
+                                            </tr>
+                                        #end
+                                        #renderExample1SubtotalsRow($region $territory $area "" 4)
+                                    </data-grouping>
+                                #end
+                                #renderExample1SubtotalsRow($region $territory "" "" 3)
+                            </data-grouping>
+                        #end
+                        #renderExample1SubtotalsRow($region "" "" "" 2)
+                    </data-grouping>
+                #end
+                #renderExample1SubtotalsRow("" "" "" "" 1)
+            </tbody>
+        </table>
+    </body>
+</html>
+
+#macro(renderExample1SubtotalsRow $region $territory $area $store $level)
+<tr class="level${level}Subtotal">
+    <td>#if($region)$region["name"]#end</td>
+    <td>#if($territory)$territory["name"]#end</td>
+    <td>#if($area)$area["name"]#end</td>
+    <td>#if($store)$store["name"]#end</td>
+    #foreach($period in $report.periods)
+        <td gf-subtotal="{'function': 'SUM'}">0</td>
+    #end
+</tr>
+#end

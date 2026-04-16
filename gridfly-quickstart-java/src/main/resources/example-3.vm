@@ -1,0 +1,171 @@
+<html>
+    <head>
+        <title>Example 1</title>
+        <style>
+            #include("styles.css")
+        </style>
+    </head>
+<body>
+#foreach($region in $report.data["regions"])
+    <table gf-table-config="{'sheetName': '$region.name', 'freezeHeader': true}">
+        <colgroup>
+            <col span="5" style="width:180px;"/>
+            #foreach($categoryEntry in $report.categories.entrySet())
+                #foreach($item in $categoryEntry.value)
+                    <col style="width:160px;"
+                         gf-number-output-format="{'groupThousands': true, 'decimals': 2}"
+                         gf-column-config="{'groups': ['items']}"/>
+                #end
+                <col class="rowTotal" style="width:170px;"
+                     gf-number-output-format="{'groupThousands': true, 'decimals': 2}"/>
+            #end
+            <col class="rowTotal" style="width:170px;" gf-column-config="{'key': 'totalSales'}"
+                 gf-number-output-format="{'groupThousands': true, 'decimals': 2}"/>
+        </colgroup>
+
+        <thead>
+            <tr>
+                <th>Region</th>
+                <th>Territory</th>
+                <th>Area</th>
+                <th>Store</th>
+                <th>Month</th>
+
+                #foreach($categoryEntry in $report.categories.entrySet())
+                    #foreach($item in $categoryEntry.value)
+                        <th style="text-align: right"
+                            gf-column-config="{'groups': '$categoryEntry.key'}">$item</th>
+                    #end
+                    <th style="text-align: right" gf-column-config="{'groups': 'categoryTotals'}">$categoryEntry.key
+                        Total
+                    </th>
+                #end
+
+                <th style="text-align: right">Total</th>
+            </tr>
+        </thead>
+
+        <tbody gf-formatting-rule="[
+                {'name': 'BestItemSales', 'condition': 'TOP_10_PERCENT', 'direction': 'COLUMN', 'columnGroup': 'items', 'autoGroup': false, 'cssClasses': ['bestMonth']},
+                {'name': 'WorstItemSales', 'condition': 'BOTTOM_10_PERCENT', 'direction': 'COLUMN', 'columnGroup': 'items', 'autoGroup': false, 'cssClasses': ['worstMonth']}
+            ]">
+            #foreach($territory in $region["territories"])
+                <data-grouping
+                        gf-group="{'name': '$report.getSafeName($region["name"], $territory["name"])'}">
+                    #foreach($area in $territory["areas"])
+                        <data-grouping
+                                gf-group="{'name': '$report.getSafeName($region["name"], $territory["name"], $area[
+                                    "name"])'}">
+
+                            #foreach($store in $area["stores"])
+                                <data-grouping
+                                        gf-group="{'name': '$report.getSafeName($region["name"], $territory[
+                                            "name"], $area["name"], $store["name"])'}">
+                                    #foreach($month in $report.months)
+                                        <tr gf-named-range="{'name': '$report.getSafeName($region["name"], $territory[
+                                            "name"], $month)', 'columns': 'totalSales'}">
+                                            <td>$region["name"]</td>
+                                            <td>$territory["name"]</td>
+                                            <td>$area["name"]</td>
+                                            <td>$store["name"]</td>
+                                            <td>$month</td>
+
+                                            #foreach($categoryEntry in $report.categories.entrySet())
+                                                #foreach($item in $categoryEntry.value)
+                                                    <td>$store["data"][$month][$categoryEntry.key][$item]</td>
+                                                #end
+                                                <td gf-formula="{'formula': 'SUM(@cols($categoryEntry.key))'}">0</td>
+                                            #end
+                                            <td gf-formula="{'formula': 'SUM(@cols(categoryTotals))'}">0</td>
+                                        </tr>
+                                    #end
+                                    #renderExample3SubtotalsRow($region $territory $area $store 5)
+                                </data-grouping>
+                            #end
+                            #renderExample3SubtotalsRow($region $territory $area "" 4)
+                        </data-grouping>
+                    #end
+                    #renderExample3SubtotalsRow($region $territory "" "" 3)
+                </data-grouping>
+            #end
+            #renderExample3SubtotalsRow($region "" "" "" 2)
+        </tbody>
+    </table>
+#end
+
+    <!-- SUMMARY SHEET-->
+    <table gf-table-config="{'sheetName': 'Summary', 'freezeHeader': true}"
+           gf-formatting-rule="[
+                {'name': 'BestMonthSummary', 'condition': 'MAX', 'direction': 'RANGE', 'columnGroup': 'months', 'cssClasses': ['bestMonthOverallLevel1', 'bestMonthOverallLevel2']},
+                {'name': 'WorstMonthSummary', 'condition': 'MIN', 'direction': 'RANGE', 'columnGroup': 'months', 'cssClasses': ['worstMonthOverallLevel1', 'worstMonthOverallLevel2']}
+            ]">
+        <colgroup>
+            <col span="2" style="width: 180px;"/>
+            <col span="12" style="width: 160px;text-align: right;"
+                 gf-column-config="{groups: 'months'}"
+                 gf-number-output-format="{'groupThousands': true, 'decimals': 2}"/>
+            <col style="width: 160px;text-align: right;"
+                 gf-number-output-format="{'groupThousands': true, 'decimals': 2}" class="rowTotal"/>
+        </colgroup>
+        <thead>
+            <tr>
+                <th>Region</th>
+                <th>Territory</th>
+                #foreach($month in $report.months)
+                    <th gf-column-config="{'groups': 'months'}">$month</th>
+                #end
+                <th>Total</th>
+            </tr>
+        </thead>
+        #foreach($region in $report.data["regions"])
+            <tbody gf-group="{'name': $report.getSafeName($region["name"])}">
+                #foreach($territory in $region["territories"])
+                    <tr>
+                        <td>$region["name"]</td>
+                        <td>$territory["name"]</td>
+                        #foreach($month in $report.months)
+                            <td gf-formula="{'formula': 'SUM($report.getSafeName($region["name"], $territory[
+                                "name"], $month))'}">
+                                0
+                            </td>
+                        #end
+                        <td gf-formula="{'formula': 'SUM(@cols(months))'}">0</td>
+                    </tr>
+                #end
+                <tr class="level2Subtotal">
+                    <td>$region["name"]</td>
+                    <td></td>
+                    #foreach($i in [1..13])
+                        <td gf-subtotal="{}">0</td>
+                    #end
+                </tr>
+            </tbody>
+        #end
+
+        <tr class="level1Subtotal">
+            <td>Overall</td>
+            <td></td>
+            #foreach($i in [1..13])
+                <td gf-subtotal="{}">0</td>
+            #end
+        </tr>
+
+    </table>
+
+#macro(renderExample3SubtotalsRow $region $territory $area $store $level)
+    <tr class="level${level}Subtotal">
+        <td>#if($region)$region["name"]#end</td>
+        <td>#if($territory)$territory["name"]#end</td>
+        <td>#if($area)$area["name"]#end</td>
+        <td>#if($store)$store["name"]#end</td>
+        <td></td>
+        #foreach($categoryEntry in $report.categories.entrySet())
+            #foreach($item in $categoryEntry.value)
+                <td gf-subtotal="{}">0</td>
+            #end
+        #end
+        <td gf-subtotal="{}">0</td>
+        <td gf-subtotal="{}">0</td>
+        <td gf-subtotal="{}">0</td>
+    </tr>
+#end

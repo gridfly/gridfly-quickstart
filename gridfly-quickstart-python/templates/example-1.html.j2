@@ -1,0 +1,97 @@
+{% macro render_example_1_subtotals_row(region, territory, area, store, level, report) -%}
+<tr class="level{{ level }}Subtotal">
+    <td>{{ region.name if region else "" }}</td>
+    <td>{{ territory.name if territory else "" }}</td>
+    <td>{{ area.name if area else "" }}</td>
+    <td>{{ store.name if store else "" }}</td>
+    {% for period in report.get_periods() %}
+        <td gf-subtotal="{'function': 'SUM'}">0</td>
+    {% endfor %}
+</tr>
+{%- endmacro %}
+
+<html>
+    <head>
+        <title>Example 1</title>
+        <style>
+            {% include "styles.css" %}
+        </style>
+    </head>
+
+    <body>
+        <table gf-table-config="{'freezeHeader': 'true'}">
+            <colgroup>
+                <col span="4" style="width:140px;"/>
+                <col span="17" style="width:150px;"
+                     gf-currency-output-format="{'groupThousands': 'true', 'decimals': 2, 'symbol': '$', 'applyToPlainNumeric': true}"/>
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Region</th>
+                    <th>Territory</th>
+                    <th>Area</th>
+                    <th>Store</th>
+
+                    {% for period in report.get_periods() %}
+                        {% if report.is_month(period) %}
+                            <th style="text-align: right"
+                                gf-column-config="{'key': '{{ period }}', 'groups': ['summary', 'months', 'periods']}">{{ period }}</th>
+                        {% elif report.is_quarter(period) %}
+                            <th style="text-align: right"
+                                gf-column-config="{'key': '{{ period }}', 'groups': ['summary', 'periods', 'quarters']}">{{ period }}</th>
+                        {% else %}
+                            <th style="text-align: right"
+                                gf-column-config="{'key': '{{ period }}', 'groups': ['summary', 'periods']}">{{ period }}</th>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody gf-formatting-rule="{'name': 'BestMonth', 'direction': 'ROW', 'columnGroup': 'months', 'cssClasses': ['bestMonth'], 'condition': 'MAX'}">
+
+                {% for region in report.get_data().regions %}
+                    <data-grouping gf-group="{'name': '{{ report.get_safe_name(region.name) }}'}">
+
+                        {% for territory in region.territories %}
+                            <data-grouping
+                                    gf-group="{'name': '{{ report.get_safe_name(region.name, territory.name) }}'}">
+
+                                {% for area in territory.areas %}
+                                    <data-grouping gf-group="{'name': '{{ report.get_safe_name(region.name, territory.name, area.name) }}'}">
+
+                                        {% for store in area.stores %}
+                                            <tr>
+                                                <td>{{ region.name }}</td>
+                                                <td>{{ territory.name }}</td>
+                                                <td>{{ area.name }}</td>
+                                                <td>{{ store.name }}</td>
+
+                                                {% for period in report.get_periods() %}
+                                                    {% if report.is_month(period) %}
+                                                        <td>{{ store.data[period] }}</td>
+                                                    {% elif report.is_quarter(period) %}
+                                                        <td class="rowTotal"
+                                                            data-gf-formula="{'formula': 'SUM(@col(-3):@col(-1))'}">0
+                                                        </td>
+                                                    {% else %}
+                                                        <td class="rowTotal"
+                                                            data-gf-formula="{'formula': 'SUM(@cols(quarters))'}">
+                                                            0
+                                                        </td>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </tr>
+                                        {% endfor %}
+                                        {{ render_example_1_subtotals_row(region, territory, area, "", 4, report) }}
+                                    </data-grouping>
+                                {% endfor %}
+                                {{ render_example_1_subtotals_row(region, territory, "", "", 3, report) }}
+                            </data-grouping>
+                        {% endfor %}
+                        {{ render_example_1_subtotals_row(region, "", "", "", 2, report) }}
+                    </data-grouping>
+                {% endfor %}
+                {{ render_example_1_subtotals_row("", "", "", "", 1, report) }}
+            </tbody>
+        </table>
+    </body>
+</html>

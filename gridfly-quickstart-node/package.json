@@ -1,0 +1,29 @@
+{
+  "name": "gridfly-quickstart-node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "generate-client": "npx @openapitools/openapi-generator-cli generate -i https://dev.api.gridfly.io/v1/apidocs/json -g javascript -o gridfly_api_client --additional-properties=usePromises=true,useES6=true && node fix-imports.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "fs-extra": "^11.3.4",
+    "nunjucks": "^3.2.4",
+    "superagent": "^10.3.0",
+    "tmp": "^0.2.5",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.28.6",
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.2",
+    "@babel/register": "^7.28.6",
+    "@openapitools/openapi-generator-cli": "^2.31.1"
+  }
+}

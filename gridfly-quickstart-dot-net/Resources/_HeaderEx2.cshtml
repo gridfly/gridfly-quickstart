@@ -1,0 +1,46 @@
+@using Gridfly.QuickStart
+@model ReportHelper
+@{
+    bool full = (bool)ViewBag.Full;
+}
+<colgroup>
+    <col span="@(full ? 4 : 1)" style="width:140px;"/>
+    @foreach (var period in Model.GetPeriods())
+    {
+        <col style="width:170px;"
+             gf-currency-output-format="{'groupThousands': 'true', 'decimals': 2, 'symbol': '$', 'applyToPlainNumeric': true}"/>
+    }
+</colgroup>
+<thead>
+    <tr>
+        @if (full)
+        {
+            <th>Region</th>
+        }
+        <th gf-column-config="{'groups': 'summary'}">Territory</th>
+        @if (full)
+        {
+            <th>Area</th>
+            <th>Store</th>
+        }
+
+        @foreach (var period in Model.GetPeriods())
+        {
+            if (Model.IsMonth(period))
+            {
+                <th style="text-align: right"
+                    gf-column-config="{'key': '@period', 'groups': ['summary', 'months', 'periods']}">@period</th>
+            }
+            else if (Model.IsQuarter(period))
+            {
+                <th style="text-align: right"
+                    gf-column-config="{'key': '@period', 'groups': ['summary', 'periods', 'quarters']}">@period</th>
+            }
+            else
+            {
+                <th style="text-align: right"
+                    gf-column-config="{'key': '@period', 'groups': ['summary', 'periods']}">@period</th>
+            }
+        }
+    </tr>
+</thead>
