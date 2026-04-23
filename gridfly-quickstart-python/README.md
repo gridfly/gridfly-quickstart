@@ -16,6 +16,8 @@ Esnure your API client id and secret are set in the `config.json` file before ru
 #### Running the project
 
 ```bash
+python -m venv .venv
+source .venv/bin/activate
 python setup.py
 python main.py
 ```
